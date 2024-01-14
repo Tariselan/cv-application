@@ -20,7 +20,7 @@ The CV Application is a Tkinter-based tool for creating Curriculum Vitae (CV) do
    pip install reportlab
    pip install tkinter
    ```
-   
+
 3. **Run the application**
    ```bash
    python cv.py
