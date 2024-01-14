@@ -2,8 +2,13 @@ import tkinter as tk
 from tkinter import ttk
 from tkinter import messagebox
 from reportlab.lib.pagesizes import letter
-from reportlab.lib.styles import getSampleStyleSheet
+from reportlab.lib import colors
 from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table
+
+import fitz  # Importing PyMuPDF
+
+from ttkthemes import ThemedStyle
+from reportlab.lib.styles import getSampleStyleSheet  
 
 class CVSection:
     def __init__(self, root, style_heading, title):
@@ -14,7 +19,11 @@ class CVSection:
         self.create_widgets()
 
     def create_widgets(self):
+        # Create a frame with padding
+        self.widgets["frame"] = ttk.Frame(self.root, padding=(20, 10))
+        self.widgets["frame"].grid(row=0, column=0, columnspan=2, sticky="ew")
         raise NotImplementedError("Subclasses must implement the 'create_widgets' method.")
+        
 
     def validate_input(self):
         raise NotImplementedError("Subclasses must implement the 'validate_input' method.")
@@ -41,6 +50,26 @@ class PersonalInformationSection(CVSection):
 
         self.widgets["statement_label"] = ttk.Label(self.widgets["frame"], text="Personal Statement:")
         self.widgets["statement_entry"] = ttk.Entry(self.widgets["frame"], width=40)
+
+        row = 1
+        for label_key, entry_key in [("name", "name"), ("phone", "phone"), ("email", "email"),
+                                     ("address", "address"), ("statement", "statement")]:
+            self.widgets[label_key+"_label"].grid(row=row, column=0, sticky="E", padx=5, pady=5)
+            self.widgets[entry_key+"_entry"].grid(row=row, column=1, sticky="W", padx=5, pady=5)
+            row += 1
+
+        # Default values
+        default_values = {
+            "name": "John Doe",
+            "phone": "123-456-7890",
+            "email": "john.doe@example.com",
+            "address": "123 Main Street, City, Country",
+            "statement": "Results-oriented professional with..."
+        }
+
+        # Set default values to the Entry widgets
+        for key, default_value in default_values.items():
+            self.widgets[key + "_entry"].insert(0, default_value)
 
         row = 1
         for label_key, entry_key in [("name", "name"), ("phone", "phone"), ("email", "email"),
@@ -87,6 +116,22 @@ class EducationSection(CVSection):
         # Graduation Date
         self.widgets["graduation_label"] = ttk.Label(self.widgets["frame"], text="Expected Graduation Date:")
         self.widgets["graduation_entry"] = ttk.Entry(self.widgets["frame"])
+
+        row = 1
+        for label_key, entry_key in [("school", "school"), ("graduation", "graduation")]:
+            self.widgets[label_key+"_label"].grid(row=row, column=0, sticky="E", padx=5, pady=5)
+            self.widgets[entry_key+"_entry"].grid(row=row, column=1, sticky="W", padx=5, pady=5)
+            row += 1
+        
+        # Default values
+        default_values = {
+            "school": "High School XYZ",
+            "graduation": "June 2023"
+        }
+
+        # Set default values to the Entry widgets
+        for key, default_value in default_values.items():
+            self.widgets[key + "_entry"].insert(0, default_value)
 
         row = 1
         for label_key, entry_key in [("school", "school"), ("graduation", "graduation")]:
@@ -188,9 +233,12 @@ class CVApp:
         self.root.geometry("650x750")
         self.root.resizable(False, False)
 
+        self.style = ThemedStyle(self.root)
+        self.style.set_theme("plastik")
+
         self.styles = getSampleStyleSheet()
         self.style_heading = self.styles['Heading1']
-
+        
         self.sections = [
             PersonalInformationSection(self.root, self.style_heading, "Personal Information"),
             EducationSection(self.root, self.style_heading, "Education"),
@@ -199,6 +247,13 @@ class CVApp:
             OtherInformationSection(self.root, self.style_heading, "Other Information")
         ]
 
+        self.center_and_configure()
+        self.create_widgets()
+
+        self.submit_button = ttk.Button(self.root, text="Generate CV", command=self.generate_cv)
+        self.submit_button.grid(row=5, column=0, columnspan=2, pady=3, sticky="n")
+
+    def center_and_configure(self):
         # Center the window
         self.root.eval('tk::PlaceWindow . center')
 
@@ -207,8 +262,10 @@ class CVApp:
         for i in range(5):
             self.root.rowconfigure(i, weight=1)
 
-        self.submit_button = ttk.Button(self.root, text="Generate CV", command=self.generate_cv)
-        self.submit_button.grid(row=5, column=0, columnspan=2, pady=20, sticky="n")
+    def create_widgets(self):
+        for section in self.sections:
+            section.widgets["frame"].columnconfigure(0, weight=1)
+            section.widgets["frame"].columnconfigure(1, weight=1)
 
     def validate_input(self):
         return all(section.validate_input() for section in self.sections)
@@ -229,10 +286,16 @@ class CVApp:
                    achievements, activities, references):
         pdf_doc = SimpleDocTemplate(pdf_filename, pagesize=letter)
         style_body = self.styles['BodyText']
+        style_heading2 = self.styles['Heading2']
 
         content = []
 
-        content.append(Paragraph(full_name, self.style_heading))
+        # Add a professional header
+        header_text = f"{full_name}"
+        content.append(Paragraph(header_text, self.style_heading))
+
+        # Personal Information
+        content.append(Paragraph("Contact Information", style_heading2))
         contact_table_data = [['Phone Number:', phone_number],
                               ['Email Address:', email_address],
                               ['Residential Address:', residential_address],
@@ -241,7 +304,8 @@ class CVApp:
         content.append(contact_table)
         content.append(Spacer(1, 12))
 
-        content.append(Paragraph("Education and Experience", self.style_heading))
+        # Education and Experience
+        content.append(Paragraph("Education and Experience", style_heading2))
         education_table_data = [['High School:', high_school],
                                 ['Expected Graduation Date:', graduation_date],
                                 ['Skills:', skills],
@@ -250,7 +314,8 @@ class CVApp:
         content.append(education_table)
         content.append(Spacer(1, 12))
 
-        content.append(Paragraph("Achievements and References", self.style_heading))
+        # Achievements and References
+        content.append(Paragraph("Achievements and References", style_heading2))
         achievements_table_data = [['Achievements and Awards:', achievements],
                                    ['Extracurricular Activities:', activities],
                                    ['References:', references]]
