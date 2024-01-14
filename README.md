@@ -12,13 +12,15 @@ The CV Application is a Tkinter-based tool for creating Curriculum Vitae (CV) do
 
 1. **Clone the repository:**
    ```bash
-   git clone https://github.com/yourusername/cv-application.git
+   git clone https://github.com/tariselan/cv-application.git
    ```
+
 2.  **Install dependencies**
    ```bash
    pip install reportlab
    pip install tkinter
    ```
+   
 3. **Run the application**
    ```bash
    python cv.py
