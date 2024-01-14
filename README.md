@@ -13,3 +13,28 @@ The CV Application is a Tkinter-based tool for creating Curriculum Vitae (CV) do
 1. **Clone the repository:**
    ```bash
    git clone https://github.com/yourusername/cv-application.git
+   ```
+2.  **Install dependencies**
+   ```bash
+   pip install reportlab
+   pip install tkinter
+   ```
+3. **Run the application**
+   ```bash
+   python cv.py
+   ```
+
+## Usage
+1. Launch the application
+2. Fill in the details for each section
+3. Click "Generate PDF" to create a PDF
+
+## Code Structure
++ **CVSection:** Base class for CV sections
++ **PersonalInformationSection:** Subclass for personal information
++ **EducationSection, SkillsSection, WorkExperienceSection, OtherInformationSection:** Sections for education, skills, work experience, and other information.
++ **CVApp:** Main application class
+
+## License
+
+This project is licensed under the [MIT License](LICENSE).
