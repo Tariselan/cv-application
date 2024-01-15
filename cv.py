@@ -1,14 +1,10 @@
 import tkinter as tk
-from tkinter import ttk
-from tkinter import messagebox
+from tkinter import ttk, messagebox
 from reportlab.lib.pagesizes import letter
-from reportlab.lib import colors
+from reportlab.lib.styles import getSampleStyleSheet
 from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table
-
-import fitz  # Importing PyMuPDF
-
 from ttkthemes import ThemedStyle
-from reportlab.lib.styles import getSampleStyleSheet  
+
 
 class CVSection:
     def __init__(self, root, style_heading, title):
@@ -19,11 +15,9 @@ class CVSection:
         self.create_widgets()
 
     def create_widgets(self):
-        # Create a frame with padding
         self.widgets["frame"] = ttk.Frame(self.root, padding=(20, 10))
         self.widgets["frame"].grid(row=0, column=0, columnspan=2, sticky="ew")
         raise NotImplementedError("Subclasses must implement the 'create_widgets' method.")
-        
 
     def validate_input(self):
         raise NotImplementedError("Subclasses must implement the 'validate_input' method.")
@@ -31,52 +25,35 @@ class CVSection:
     def get_data(self):
         raise NotImplementedError("Subclasses must implement the 'get_data' method.")
 
+
 class PersonalInformationSection(CVSection):
+    DEFAULT_VALUES = {
+        "name": "John Doe",
+        "phone": "123-456-7890",
+        "email": "john.doe@example.com",
+        "address": "123 Main Street, City, Country",
+        "statement": "Results-oriented professional with..."
+    }
+
     def create_widgets(self):
         self.widgets["frame"] = ttk.Frame(self.root, padding=(10, 5))
         self.widgets["frame"].grid(row=0, column=0, columnspan=2, sticky="ew")
 
-        self.widgets["name_label"] = ttk.Label(self.widgets["frame"], text="Full Name:")
-        self.widgets["name_entry"] = ttk.Entry(self.widgets["frame"])
+        labels_entries = [
+            ("Full Name:", "name"), ("Phone Number:", "phone"), ("Email Address:", "email"),
+            ("Residential Address:", "address"), ("Personal Statement:", "statement")
+        ]
 
-        self.widgets["phone_label"] = ttk.Label(self.widgets["frame"], text="Phone Number:")
-        self.widgets["phone_entry"] = ttk.Entry(self.widgets["frame"])
+        for row, (label_text, entry_key) in enumerate(labels_entries, start=1):
+            label = ttk.Label(self.widgets["frame"], text=label_text)
+            entry = ttk.Entry(self.widgets["frame"])
+            label.grid(row=row, column=0, sticky="E", padx=5, pady=5)
+            entry.grid(row=row, column=1, sticky="W", padx=5, pady=5)
+            self.widgets[entry_key + "_entry"] = entry
 
-        self.widgets["email_label"] = ttk.Label(self.widgets["frame"], text="Email Address:")
-        self.widgets["email_entry"] = ttk.Entry(self.widgets["frame"])
-
-        self.widgets["address_label"] = ttk.Label(self.widgets["frame"], text="Residential Address:")
-        self.widgets["address_entry"] = ttk.Entry(self.widgets["frame"])
-
-        self.widgets["statement_label"] = ttk.Label(self.widgets["frame"], text="Personal Statement:")
-        self.widgets["statement_entry"] = ttk.Entry(self.widgets["frame"], width=40)
-
-        row = 1
-        for label_key, entry_key in [("name", "name"), ("phone", "phone"), ("email", "email"),
-                                     ("address", "address"), ("statement", "statement")]:
-            self.widgets[label_key+"_label"].grid(row=row, column=0, sticky="E", padx=5, pady=5)
-            self.widgets[entry_key+"_entry"].grid(row=row, column=1, sticky="W", padx=5, pady=5)
-            row += 1
-
-        # Default values
-        default_values = {
-            "name": "John Doe",
-            "phone": "123-456-7890",
-            "email": "john.doe@example.com",
-            "address": "123 Main Street, City, Country",
-            "statement": "Results-oriented professional with..."
-        }
-
-        # Set default values to the Entry widgets
-        for key, default_value in default_values.items():
-            self.widgets[key + "_entry"].insert(0, default_value)
-
-        row = 1
-        for label_key, entry_key in [("name", "name"), ("phone", "phone"), ("email", "email"),
-                                     ("address", "address"), ("statement", "statement")]:
-            self.widgets[label_key+"_label"].grid(row=row, column=0, sticky="E", padx=5, pady=5)
-            self.widgets[entry_key+"_entry"].grid(row=row, column=1, sticky="W", padx=5, pady=5)
-            row += 1
+            # Set default values
+            default_value = self.DEFAULT_VALUES.get(entry_key, "")
+            entry.insert(0, default_value)
 
     def validate_input(self):
         required_fields = {
@@ -101,7 +78,13 @@ class PersonalInformationSection(CVSection):
             "personal_statement": self.widgets["statement_entry"].get(),
         }
 
+
 class EducationSection(CVSection):
+    DEFAULT_VALUES = {
+        "school": "High School XYZ",
+        "graduation": "June 2023"
+    }
+
     def create_widgets(self):
         self.widgets["frame"] = ttk.Frame(self.root, padding=(10, 5))
         self.widgets["frame"].grid(row=1, column=0, columnspan=2, sticky="ew")
@@ -109,35 +92,18 @@ class EducationSection(CVSection):
         self.widgets["education_label"] = ttk.Label(self.widgets["frame"], text=self.title, font=('Helvetica', 16, 'bold'))
         self.widgets["education_label"].grid(row=0, column=0, columnspan=2, pady=10, sticky="n")
 
-        # High School
-        self.widgets["school_label"] = ttk.Label(self.widgets["frame"], text="High School:")
-        self.widgets["school_entry"] = ttk.Entry(self.widgets["frame"])
+        labels_entries = [("High School:", "school"), ("Expected Graduation Date:", "graduation")]
 
-        # Graduation Date
-        self.widgets["graduation_label"] = ttk.Label(self.widgets["frame"], text="Expected Graduation Date:")
-        self.widgets["graduation_entry"] = ttk.Entry(self.widgets["frame"])
+        for row, (label_text, entry_key) in enumerate(labels_entries, start=1):
+            label = ttk.Label(self.widgets["frame"], text=label_text)
+            entry = ttk.Entry(self.widgets["frame"])
+            label.grid(row=row, column=0, sticky="E", padx=5, pady=5)
+            entry.grid(row=row, column=1, sticky="W", padx=5, pady=5)
+            self.widgets[entry_key + "_entry"] = entry
 
-        row = 1
-        for label_key, entry_key in [("school", "school"), ("graduation", "graduation")]:
-            self.widgets[label_key+"_label"].grid(row=row, column=0, sticky="E", padx=5, pady=5)
-            self.widgets[entry_key+"_entry"].grid(row=row, column=1, sticky="W", padx=5, pady=5)
-            row += 1
-        
-        # Default values
-        default_values = {
-            "school": "High School XYZ",
-            "graduation": "June 2023"
-        }
-
-        # Set default values to the Entry widgets
-        for key, default_value in default_values.items():
-            self.widgets[key + "_entry"].insert(0, default_value)
-
-        row = 1
-        for label_key, entry_key in [("school", "school"), ("graduation", "graduation")]:
-            self.widgets[label_key+"_label"].grid(row=row, column=0, sticky="E", padx=5, pady=5)
-            self.widgets[entry_key+"_entry"].grid(row=row, column=1, sticky="W", padx=5, pady=5)
-            row += 1
+            # Set default values
+            default_value = self.DEFAULT_VALUES.get(entry_key, "")
+            entry.insert(0, default_value)
 
     def validate_input(self):
         # Additional validation can be added if needed
@@ -148,6 +114,7 @@ class EducationSection(CVSection):
             "high_school": self.widgets["school_entry"].get(),
             "graduation_date": self.widgets["graduation_entry"].get()
         }
+
 
 class SkillsSection(CVSection):
     def create_widgets(self):
@@ -169,6 +136,7 @@ class SkillsSection(CVSection):
             "skills": self.widgets["skills_entry"].get("1.0", tk.END).strip()
         }
 
+
 class WorkExperienceSection(CVSection):
     def create_widgets(self):
         self.widgets["frame"] = ttk.Frame(self.root, padding=(10, 5))
@@ -189,6 +157,7 @@ class WorkExperienceSection(CVSection):
             "work_experience": self.widgets["experience_entry"].get("1.0", tk.END).strip()
         }
 
+
 class OtherInformationSection(CVSection):
     def create_widgets(self):
         self.widgets["frame"] = ttk.Frame(self.root, padding=(10, 5))
@@ -197,23 +166,18 @@ class OtherInformationSection(CVSection):
         self.widgets["other_label"] = ttk.Label(self.widgets["frame"], text=self.title, font=('Helvetica', 16, 'bold'))
         self.widgets["other_label"].grid(row=0, column=0, columnspan=2, pady=10, sticky="n")
 
-        # Achievements and Awards
-        self.widgets["achievements_label"] = ttk.Label(self.widgets["frame"], text="Achievements and Awards:")
-        self.widgets["achievements_entry"] = ttk.Entry(self.widgets["frame"])
+        labels_entries = [
+            ("Achievements and Awards:", "achievements"),
+            ("Extracurricular Activities:", "activities"),
+            ("References:", "references")
+        ]
 
-        # Extracurricular Activities
-        self.widgets["activities_label"] = ttk.Label(self.widgets["frame"], text="Extracurricular Activities:")
-        self.widgets["activities_entry"] = ttk.Entry(self.widgets["frame"])
-
-        # References
-        self.widgets["references_label"] = ttk.Label(self.widgets["frame"], text="References:")
-        self.widgets["references_entry"] = ttk.Entry(self.widgets["frame"])
-
-        row = 1
-        for label_key, entry_key in [("achievements", "achievements"), ("activities", "activities"), ("references", "references")]:
-            self.widgets[label_key+"_label"].grid(row=row, column=0, sticky="E", padx=5, pady=5)
-            self.widgets[entry_key+"_entry"].grid(row=row, column=1, sticky="W", padx=5, pady=5)
-            row += 1
+        for row, (label_text, entry_key) in enumerate(labels_entries, start=1):
+            label = ttk.Label(self.widgets["frame"], text=label_text)
+            entry = ttk.Entry(self.widgets["frame"])
+            label.grid(row=row, column=0, sticky="E", padx=5, pady=5)
+            entry.grid(row=row, column=1, sticky="W", padx=5, pady=5)
+            self.widgets[entry_key + "_entry"] = entry
 
     def validate_input(self):
         # Additional validation can be added if needed
@@ -225,6 +189,53 @@ class OtherInformationSection(CVSection):
             "activities": self.widgets["activities_entry"].get(),
             "references": self.widgets["references_entry"].get()
         }
+
+
+class PDFGenerator:
+    @staticmethod
+    def generate_content(style_heading, **data):
+        content = []
+
+        # Add a professional header
+        header_text = f"{data['full_name']}"
+        content.append(Paragraph(header_text, style_heading))
+
+        # Personal Information
+        content.append(Paragraph("Contact Information", style_heading))
+        contact_table_data = [
+            ['Phone Number:', data['phone_number']],
+            ['Email Address:', data['email_address']],
+            ['Residential Address:', data['residential_address']],
+            ['Personal Statement:', data['personal_statement']]
+        ]
+        contact_table = Table(contact_table_data, colWidths=[150, 400])
+        content.append(contact_table)
+        content.append(Spacer(1, 12))
+
+        # Education and Experience
+        content.append(Paragraph("Education and Experience", style_heading))
+        education_table_data = [
+            ['High School:', data['high_school']],
+            ['Expected Graduation Date:', data['graduation_date']],
+            ['Skills:', data['skills']],
+            ['Work Experience:', data['work_experience']]
+        ]
+        education_table = Table(education_table_data, colWidths=[150, 400])
+        content.append(education_table)
+        content.append(Spacer(1, 12))
+
+        # Achievements and References
+        content.append(Paragraph("Achievements and References", style_heading))
+        achievements_table_data = [
+            ['Achievements and Awards:', data['achievements']],
+            ['Extracurricular Activities:', data['activities']],
+            ['References:', data['references']]
+        ]
+        achievements_table = Table(achievements_table_data, colWidths=[150, 400])
+        content.append(achievements_table)
+
+        return content
+
 
 class CVApp:
     def __init__(self, root):
@@ -238,7 +249,7 @@ class CVApp:
 
         self.styles = getSampleStyleSheet()
         self.style_heading = self.styles['Heading1']
-        
+
         self.sections = [
             PersonalInformationSection(self.root, self.style_heading, "Personal Information"),
             EducationSection(self.root, self.style_heading, "Education"),
@@ -254,7 +265,6 @@ class CVApp:
         self.submit_button.grid(row=5, column=0, columnspan=2, pady=3, sticky="n")
 
     def center_and_configure(self):
-        # Center the window
         self.root.eval('tk::PlaceWindow . center')
 
         for i in range(2):
@@ -279,50 +289,13 @@ class CVApp:
             data.update(section.get_data())
 
         pdf_filename = "generated_cv.pdf"
-        self.create_pdf(pdf_filename, **data)
+        content = PDFGenerator.generate_content(self.style_heading, **data)
+        self.create_pdf(pdf_filename, content)
 
-    def create_pdf(self, pdf_filename, full_name, phone_number, email_address, residential_address,
-                   personal_statement, high_school, graduation_date, skills, work_experience,
-                   achievements, activities, references):
+    def create_pdf(self, pdf_filename, content):
         pdf_doc = SimpleDocTemplate(pdf_filename, pagesize=letter)
-        style_body = self.styles['BodyText']
-        style_heading2 = self.styles['Heading2']
-
-        content = []
-
-        # Add a professional header
-        header_text = f"{full_name}"
-        content.append(Paragraph(header_text, self.style_heading))
-
-        # Personal Information
-        content.append(Paragraph("Contact Information", style_heading2))
-        contact_table_data = [['Phone Number:', phone_number],
-                              ['Email Address:', email_address],
-                              ['Residential Address:', residential_address],
-                              ['Personal Statement:', personal_statement]]
-        contact_table = Table(contact_table_data, colWidths=[150, 400])
-        content.append(contact_table)
-        content.append(Spacer(1, 12))
-
-        # Education and Experience
-        content.append(Paragraph("Education and Experience", style_heading2))
-        education_table_data = [['High School:', high_school],
-                                ['Expected Graduation Date:', graduation_date],
-                                ['Skills:', skills],
-                                ['Work Experience:', work_experience]]
-        education_table = Table(education_table_data, colWidths=[150, 400])
-        content.append(education_table)
-        content.append(Spacer(1, 12))
-
-        # Achievements and References
-        content.append(Paragraph("Achievements and References", style_heading2))
-        achievements_table_data = [['Achievements and Awards:', achievements],
-                                   ['Extracurricular Activities:', activities],
-                                   ['References:', references]]
-        achievements_table = Table(achievements_table_data, colWidths=[150, 400])
-        content.append(achievements_table)
-
         pdf_doc.build(content)
+
 
 if __name__ == "__main__":
     root = tk.Tk()

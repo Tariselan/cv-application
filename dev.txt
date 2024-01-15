@@ -1,0 +1,8 @@
+i am devving this in vscode:
+
+extensions recommended:
+    - Markdown Preview Enhanced
+v0.8.11
+    - vscode-pdf
+v1.2.2
+    - 
