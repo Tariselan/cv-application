@@ -5,8 +5,6 @@ from reportlab.lib.pagesizes import letter
 from reportlab.lib import colors
 from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table
 
-import fitz  # Importing PyMuPDF
-
 from ttkthemes import ThemedStyle
 from reportlab.lib.styles import getSampleStyleSheet  
 
