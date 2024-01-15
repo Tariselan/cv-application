@@ -1,10 +1,11 @@
 import tkinter as tk
 from tkinter import ttk, messagebox
-from reportlab.lib.pagesizes import letter
 from reportlab.lib.styles import getSampleStyleSheet
-from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table
-from ttkthemes import ThemedStyle
+from reportlab.lib.pagesizes import A4 
+from reportlab.lib import utils
+from reportlab.platypus import SimpleDocTemplate, Paragraph, PageTemplate
 
+from ttkthemes import ThemedStyle
 
 class CVSection:
     def __init__(self, root, style_heading, title):
@@ -24,7 +25,6 @@ class CVSection:
 
     def get_data(self):
         raise NotImplementedError("Subclasses must implement the 'get_data' method.")
-
 
 class PersonalInformationSection(CVSection):
     DEFAULT_VALUES = {
@@ -78,7 +78,6 @@ class PersonalInformationSection(CVSection):
             "personal_statement": self.widgets["statement_entry"].get(),
         }
 
-
 class EducationSection(CVSection):
     DEFAULT_VALUES = {
         "school": "High School XYZ",
@@ -115,7 +114,6 @@ class EducationSection(CVSection):
             "graduation_date": self.widgets["graduation_entry"].get()
         }
 
-
 class SkillsSection(CVSection):
     def create_widgets(self):
         self.widgets["frame"] = ttk.Frame(self.root, padding=(10, 5))
@@ -136,7 +134,6 @@ class SkillsSection(CVSection):
             "skills": self.widgets["skills_entry"].get("1.0", tk.END).strip()
         }
 
-
 class WorkExperienceSection(CVSection):
     def create_widgets(self):
         self.widgets["frame"] = ttk.Frame(self.root, padding=(10, 5))
@@ -156,7 +153,6 @@ class WorkExperienceSection(CVSection):
         return {
             "work_experience": self.widgets["experience_entry"].get("1.0", tk.END).strip()
         }
-
 
 class OtherInformationSection(CVSection):
     def create_widgets(self):
@@ -190,13 +186,49 @@ class OtherInformationSection(CVSection):
             "references": self.widgets["references_entry"].get()
         }
 
+class TopImagePageTemplate(SimpleDocTemplate):
+    def __init__(self, filename, **kwargs):
+        SimpleDocTemplate.__init__(self, filename, pagesize=A4, **kwargs)
+        self.topImage = None
+        self.topImageHeight = 0
+
+    def build(self, flowables, filename=None, canvasmaker=None):
+        self.topImage = utils.ImageReader(self.topImage)  # Load the image
+        super().build(flowables, filename=filename, canvasmaker=canvasmaker)
+
+    def afterFlowable(self, flowable, canvas, doc):
+        if isinstance(flowable, Paragraph) and self.topImage:
+            # Calculate the height needed for the image
+            _, line_height = flowable.wrap(doc.width, doc.height)
+            self.topImageHeight = line_height
+
+    def getPageTemplate(self, page_number):
+        return PageTemplate('topImage', pagesize=A4)
 
 class PDFGenerator:
     @staticmethod
-    def generate_content(style_heading, **data):
+    def generate_content(style_heading, header_image_path, **data):
         content = []
 
-        # Add a professional header
+        # Set top image and height
+        pdf = TopImagePageTemplate("temp.pdf")  # temporary pdf to calculate image height
+        pdf.topImage = header_image_path
+        pdf.build([])  # build an empty document to calculate height
+        image_height = pdf.topImageHeight
+
+        # Add a professional header with image
+        header_image = Image(header_image_path, width=A4[0], height=image_height)
+        content.append(header_image)
+
+        header_text = f"{data['full_name']}"
+        content.append(Paragraph(header_text, style_heading))
+        content = []
+
+        # Add a professional header with image
+        page_width, _ = A4  # Change to A4
+        header_image = Image(header_image_path, width=page_width, height=70)
+        content.append(header_image)
+
         header_text = f"{data['full_name']}"
         content.append(Paragraph(header_text, style_heading))
 
@@ -235,8 +267,7 @@ class PDFGenerator:
         content.append(achievements_table)
 
         return content
-
-
+    
 class CVApp:
     def __init__(self, root):
         self.root = root
@@ -288,12 +319,11 @@ class CVApp:
         for section in self.sections:
             data.update(section.get_data())
 
-        pdf_filename = "generated_cv.pdf"
-        content = PDFGenerator.generate_content(self.style_heading, **data)
-        self.create_pdf(pdf_filename, content)
+        header_image_path = 'images/header.png'  # Adjust the path based on your folder structure
 
-    def create_pdf(self, pdf_filename, content):
-        pdf_doc = SimpleDocTemplate(pdf_filename, pagesize=letter)
+        # Use MyDocTemplate instead of SimpleDocTemplate
+        pdf_doc = TopImagePageTemplate("generated_cv.pdf", topImage=header_image_path)
+        content = PDFGenerator.generate_content(self.style_heading, header_image_path, **data)
         pdf_doc.build(content)
 
 
