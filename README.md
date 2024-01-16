@@ -9,7 +9,7 @@ The CV Application is a Tkinter-based tool for creating Curriculum Vitae (CV) do
 - Generate a PDF CV
 
 ## Installation
-
+ 
 1. **Clone the repository:**
    ```bash
    git clone https://github.com/tariselan/cv-application.git
