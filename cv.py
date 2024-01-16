@@ -3,7 +3,7 @@ from tkinter import ttk, messagebox
 from reportlab.lib.styles import getSampleStyleSheet
 from reportlab.lib.pagesizes import A4 
 from reportlab.lib import utils
-from reportlab.platypus import SimpleDocTemplate, Paragraph, PageTemplate
+from reportlab.platypus import SimpleDocTemplate, Paragraph, PageTemplate, Spacer
 
 from ttkthemes import ThemedStyle
 
@@ -207,66 +207,29 @@ class TopImagePageTemplate(SimpleDocTemplate):
 
 class PDFGenerator:
     @staticmethod
-    def generate_content(style_heading, header_image_path, **data):
+    def add_section_to_pdf(pdf_doc, section, data):
         content = []
 
-        # Set top image and height
-        pdf = TopImagePageTemplate("temp.pdf")  # temporary pdf to calculate image height
-        pdf.topImage = header_image_path
-        pdf.build([])  # build an empty document to calculate height
-        image_height = pdf.topImageHeight
+        # Add a section header
+        content.append(Paragraph(section.title, section.style_heading))
 
-        # Add a professional header with image
-        header_image = Image(header_image_path, width=A4[0], height=image_height)
-        content.append(header_image)
+        # Add section content
+        section_data = section.get_data()
+        for label, value in section_data.items():
+            content.append(Paragraph(f"{label}: {value}", section.style_heading))
 
-        header_text = f"{data['full_name']}"
-        content.append(Paragraph(header_text, style_heading))
-        content = []
-
-        # Add a professional header with image
-        page_width, _ = A4  # Change to A4
-        header_image = Image(header_image_path, width=page_width, height=70)
-        content.append(header_image)
-
-        header_text = f"{data['full_name']}"
-        content.append(Paragraph(header_text, style_heading))
-
-        # Personal Information
-        content.append(Paragraph("Contact Information", style_heading))
-        contact_table_data = [
-            ['Phone Number:', data['phone_number']],
-            ['Email Address:', data['email_address']],
-            ['Residential Address:', data['residential_address']],
-            ['Personal Statement:', data['personal_statement']]
-        ]
-        contact_table = Table(contact_table_data, colWidths=[150, 400])
-        content.append(contact_table)
         content.append(Spacer(1, 12))
+        pdf_doc.build(content)
 
-        # Education and Experience
-        content.append(Paragraph("Education and Experience", style_heading))
-        education_table_data = [
-            ['High School:', data['high_school']],
-            ['Expected Graduation Date:', data['graduation_date']],
-            ['Skills:', data['skills']],
-            ['Work Experience:', data['work_experience']]
-        ]
-        education_table = Table(education_table_data, colWidths=[150, 400])
-        content.append(education_table)
-        content.append(Spacer(1, 12))
+    @staticmethod
+    def generate_content(style_heading, sections):
+        pdf_filename = "generated_cv.pdf"
+        pdf_doc = SimpleDocTemplate(pdf_filename, pagesize=A4)
 
-        # Achievements and References
-        content.append(Paragraph("Achievements and References", style_heading))
-        achievements_table_data = [
-            ['Achievements and Awards:', data['achievements']],
-            ['Extracurricular Activities:', data['activities']],
-            ['References:', data['references']]
-        ]
-        achievements_table = Table(achievements_table_data, colWidths=[150, 400])
-        content.append(achievements_table)
+        for section in sections:
+            PDFGenerator.add_section_to_pdf(pdf_doc, section, section.get_data())
 
-        return content
+        return pdf_filename
     
 class CVApp:
     def __init__(self, root):
@@ -292,8 +255,22 @@ class CVApp:
         self.center_and_configure()
         self.create_widgets()
 
-        self.submit_button = ttk.Button(self.root, text="Generate CV", command=self.generate_cv)
+        self.submit_button = ttk.Button(self.root, text="Generate CV", command=self.generate_pdf)
         self.submit_button.grid(row=5, column=0, columnspan=2, pady=3, sticky="n")
+
+        self.generate_pdf_button = ttk.Button(self.root, text="Generate PDF", command=self.generate_pdf)
+        self.generate_pdf_button.grid(row=5, column=0, columnspan=2, pady=3, sticky="n")
+
+    def generate_pdf(self):
+        if not self.validate_input():
+            return
+
+        data = {}
+        for section in self.sections:
+            data.update(section.get_data())
+
+        pdf_filename = PDFGenerator.generate_content(self.style_heading, self.sections)
+        print(f"PDF generated: {pdf_filename}")
 
     def center_and_configure(self):
         self.root.eval('tk::PlaceWindow . center')
@@ -310,21 +287,6 @@ class CVApp:
 
     def validate_input(self):
         return all(section.validate_input() for section in self.sections)
-
-    def generate_cv(self):
-        if not self.validate_input():
-            return
-
-        data = {}
-        for section in self.sections:
-            data.update(section.get_data())
-
-        header_image_path = 'images/header.png'  # Adjust the path based on your folder structure
-
-        # Use MyDocTemplate instead of SimpleDocTemplate
-        pdf_doc = TopImagePageTemplate("generated_cv.pdf", topImage=header_image_path)
-        content = PDFGenerator.generate_content(self.style_heading, header_image_path, **data)
-        pdf_doc.build(content)
 
 
 if __name__ == "__main__":
